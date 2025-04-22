@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { UserActivityService } from '../services/UserActivityService';
 import { verify } from 'jsonwebtoken';
 
-// Constantes para padronização
 const LOG_PREFIXES = {
     REQUEST: '🔍 Request:',
     AUTH: '🔑 Autenticação:',
@@ -14,28 +13,21 @@ interface AuthenticatedRequest extends Request {
     userId?: string;
 }
 
-/**
- * Middleware global para rastreamento de atividades do usuário
- * Registra automaticamente atividades de rotas autenticadas
- */
+
 export const globalActivityTracker = (
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ) => {
     try {
-        // Extrai informações básicas da requisição
         const requestInfo = extractRequestInfo(req);
 
-        // Verifica autenticação e extrai userId do token JWT
         const userId = extractUserIdFromToken(requestInfo.authHeader);
 
-        // Define userId no request para uso em outros middlewares
         if (userId) {
             req.userId = userId;
         }
 
-        // Registra a atividade quando a resposta for finalizada
         res.on('finish', () => {
             try {
                 processFinishedRequest(req, res, requestInfo, userId);
@@ -50,23 +42,19 @@ export const globalActivityTracker = (
         next();
     } catch (err) {
         console.error(`${LOG_PREFIXES.ERROR} Erro no middleware global:`, err);
-        next(); // Continua mesmo com erro no middleware
+        next();
     }
 };
 
-/**
- * Processa uma requisição finalizada
- */
+
 function processFinishedRequest(
     req: Request,
     res: Response,
     requestInfo: ReturnType<typeof extractRequestInfo>,
     userId: string | null
 ) {
-    // Determina se é uma rota de login
     const isLoginRoute = checkIfLoginRoute(req, requestInfo.originalUrl);
 
-    // Log para debugging
     logRequestFinished(
         req,
         requestInfo.originalUrl,
@@ -75,12 +63,10 @@ function processFinishedRequest(
         res.statusCode
     );
 
-    // Se não for autenticado nem login, não registra
     if (!userId && !isLoginRoute) {
         return;
     }
 
-    // Não registra login (delegado ao LoginTrackerMiddleware)
     if (isLoginRoute) {
         console.log(
             `${LOG_PREFIXES.ACTIVITY} Login detectado - ignorando registro no middleware global`
@@ -88,13 +74,10 @@ function processFinishedRequest(
         return;
     }
 
-    // Registra atividade para requisição autenticada
     trackAuthenticatedActivity(req, requestInfo, userId);
 }
 
-/**
- * Extrai informações básicas da requisição
- */
+
 function extractRequestInfo(req: Request) {
     return {
         originalUrl: req.originalUrl || req.url,
@@ -105,9 +88,7 @@ function extractRequestInfo(req: Request) {
     };
 }
 
-/**
- * Extrai o userId do token JWT
- */
+
 function extractUserIdFromToken(authHeader?: string): string | null {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return null;
@@ -126,9 +107,7 @@ function extractUserIdFromToken(authHeader?: string): string | null {
     }
 }
 
-/**
- * Verifica se é uma rota de login
- */
+
 function checkIfLoginRoute(req: Request, url: string): boolean {
     return (
         req.method === 'POST' &&
@@ -136,9 +115,6 @@ function checkIfLoginRoute(req: Request, url: string): boolean {
     );
 }
 
-/**
- * Registra log de requisição finalizada
- */
 function logRequestFinished(
     req: Request,
     url: string,
@@ -155,9 +131,7 @@ function logRequestFinished(
     );
 }
 
-/**
- * Registra atividade para requisição autenticada
- */
+
 function trackAuthenticatedActivity(
     req: Request,
     requestInfo: ReturnType<typeof extractRequestInfo>,
@@ -167,12 +141,10 @@ function trackAuthenticatedActivity(
 
     const userActivityService = new UserActivityService();
 
-    // Processa informações da URL
     const path =
         req.url !== requestInfo.originalUrl ? req.url : requestInfo.originalUrl;
     const screen = path.replace(/^\/api\//, '').replace(/\//g, '-') || 'root';
 
-    // Formata os detalhes da atividade
     const details = formatActivityDetails(
         req,
         requestInfo.method,
@@ -180,7 +152,6 @@ function trackAuthenticatedActivity(
         requestInfo.originalUrl
     );
 
-    // Registra a atividade
     userActivityService
         .logActivity(
             userId,
@@ -198,9 +169,7 @@ function trackAuthenticatedActivity(
         );
 }
 
-/**
- * Formata detalhes da atividade com base no método HTTP
- */
+
 function formatActivityDetails(
     req: Request,
     method: string,
