@@ -13,7 +13,7 @@ export class UserActivity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ nullable: true }) // Adicione nullable: true
+    @Column({ nullable: true }) 
     userId: string;
 
     @ManyToOne(() => User)
@@ -24,7 +24,7 @@ export class UserActivity {
     action: string;
 
     @Column()
-    screen: string; // 'login-page', 'profile-page', etc.
+    screen: string;
 
     @Column({ nullable: true })
     details: string;

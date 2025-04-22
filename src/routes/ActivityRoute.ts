@@ -82,7 +82,6 @@ export class ActivityRouter {
             }
         );
 
-        // Endpoint para receber eventos do front-end
         this.router.post(
             '/track',
             authMiddleware,
